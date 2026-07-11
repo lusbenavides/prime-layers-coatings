@@ -9,12 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!chatToggle || !chatWindow) return;
 
-    // Historial de la conversación en memoria (se envía completo en cada
-    // request para que Ava recuerde el contexto y pueda cerrar el lead).
-    // Empieza con el saludo inicial que ya viene escrito en el HTML.
-    const conversationHistory = [
-        { role: 'assistant', content: chatMessages.querySelector('.bot-message')?.innerText || '' }
-    ];
+    // Historial de la conversación (necesario para que Ava recuerde datos del cliente)
+    let conversationHistory = [];
 
     // Abrir / Cerrar Chat
     chatToggle.addEventListener('click', () => chatWindow.classList.toggle('active'));
@@ -26,9 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = chatInput.value.trim();
         if (!message) return;
 
-        // Agregar mensaje del usuario a la pantalla y al historial
+        // Agregar mensaje del usuario a la pantalla
         appendMessage('user', message);
-        conversationHistory.push({ role: 'user', content: message });
         chatInput.value = '';
 
         // Indicador de "escribiendo..."
@@ -44,18 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Remover indicador y poner respuesta real
             document.getElementById(typingId)?.remove();
+            appendMessage('bot', data.reply || 'Lo siento, tuve un problema al procesar tu mensaje.');
 
-            const reply = data.reply || 'Lo siento, tuve un problema al procesar tu mensaje.';
-            appendMessage('bot', reply);
-            conversationHistory.push({ role: 'assistant', content: reply });
-
-            // Si el backend confirma que el lead quedó guardado en Supabase
-            if (data.leadCaptured) {
-                appendMessage('bot', '✅ Registré tus datos — un asesor de Prime Layer Coatings te contactará muy pronto.');
+            // Actualizar historial para que Ava mantenga el contexto en el siguiente mensaje
+            if (Array.isArray(data.history)) {
+                conversationHistory = data.history;
             }
         } catch (error) {
             document.getElementById(typingId)?.remove();
-            appendMessage('bot', 'Error de conexión. Por favor intenta de nuevo o llámanos al 725-318-1411.');
+            appendMessage('bot', 'Error de conexión. Por favor intenta de nuevo.');
         }
     });
 

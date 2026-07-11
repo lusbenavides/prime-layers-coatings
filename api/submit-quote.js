@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './_lib/supabaseAdmin.js';
+import { sendLeadEmail } from './_lib/mailer.js';
 
 export default async function handler(req, res) {
   // Habilitar CORS básico
@@ -26,17 +27,25 @@ export default async function handler(req, res) {
     const { data, error } = await supabaseAdmin
       .from('leads')
       .insert([
-        { 
-          name, 
-          email, 
-          phone, 
-          project_type: projectType, 
+        {
+          name,
+          email,
+          phone,
+          project_type: projectType,
           description,
+          source: 'form',
           created_at: new Date().toISOString()
         }
       ]);
 
     if (error) throw error;
+
+    // Notificar por correo — si falla el email, no tumba la respuesta exitosa al cliente
+    try {
+      await sendLeadEmail({ source: 'form', name, email, phone, projectType, description });
+    } catch (emailError) {
+      console.error('Error enviando email de notificación (formulario):', emailError);
+    }
 
     return res.status(200).json({ success: true, message: 'Cotización registrada exitosamente.' });
   } catch (error) {
