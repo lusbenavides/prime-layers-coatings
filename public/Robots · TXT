@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://prime-layers-coatings.vercel.app/sitemap.xml
