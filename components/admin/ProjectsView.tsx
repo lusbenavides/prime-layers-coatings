@@ -12,9 +12,10 @@ import type {
   ProjectStatus,
 } from '@/types/database';
 import { formatDate, formatMoney, toDateInputValue } from '@/lib/format';
+import { getTrackUrl } from '@/lib/project-tracking';
 import { AdminShell } from '@/components/admin/AdminShell';
 
-const STATUSES: ProjectStatus[] = ['scheduled', 'in_progress', 'completed', 'cancelled'];
+const STATUSES: ProjectStatus[] = ['scheduled', 'in_progress', 'finishing', 'completed', 'cancelled'];
 const PAYMENT_STATUSES: PaymentStatus[] = ['pending', 'partial', 'paid', 'refunded'];
 const PHOTO_BUCKET = 'project-photos';
 
@@ -101,21 +102,49 @@ export function ProjectsView() {
       notes: String(fd.get('notes') || '') || null,
     };
     const supabase = createClient();
-    const { error } =
-      modal && modal !== 'new'
-        ? await supabase.from('projects').update(row).eq('id', modal.id)
-        : await supabase.from('projects').insert([row]);
-    if (error) alert(error.message);
-    else {
-      setModal(null);
-      load();
+    if (modal && modal !== 'new') {
+      const { error } = await supabase.from('projects').update(row).eq('id', modal.id);
+      if (error) alert(error.message);
+      else {
+        setModal(null);
+        load();
+        await notifyClient(modal.id, 'status', row.status as ProjectStatus);
+      }
+    } else {
+      const { data, error } = await supabase.from('projects').insert([row]).select('id').single();
+      if (error) alert(error.message);
+      else {
+        setModal(null);
+        load();
+        if (data?.id) await notifyClient(data.id, 'welcome');
+      }
     }
+  }
+
+  async function notifyClient(projectId: string, type: 'welcome' | 'status', status?: ProjectStatus) {
+    const res = await fetch('/api/notify-project', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId, type, status }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (res.status !== 503) alert(data.message || 'SMS failed');
+      return null;
+    }
+    return data.trackUrl as string;
   }
 
   async function updateStatus(id: string, status: ProjectStatus) {
     const { error } = await createClient().from('projects').update({ status }).eq('id', id);
     if (error) alert(error.message);
-    else load();
+    else {
+      await notifyClient(id, 'status', status);
+      load();
+      if (detail?.id === id) {
+        setDetail({ ...detail, status });
+      }
+    }
   }
 
   async function deleteProject(id: string) {
@@ -484,6 +513,44 @@ export function ProjectsView() {
                 {formatDate(detail.end_date)}
               </div>
             </div>
+
+            {detail.access_token && (
+              <section className="rounded-lg border border-amber/20 bg-amber/5 p-4">
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-amber">
+                  Client Portal / Panel del cliente
+                </h4>
+                <p className="mb-3 text-xs text-gray-400">
+                  Share this link so your client can track progress. SMS is sent automatically on status changes.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    readOnly
+                    value={getTrackUrl(detail.access_token)}
+                    className="min-w-0 flex-1 rounded border border-white/10 bg-navy-mid px-3 py-2 text-xs text-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(getTrackUrl(detail.access_token!));
+                      alert('Link copied!');
+                    }}
+                    className="rounded border border-white/15 px-3 py-2 text-xs"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const url = await notifyClient(detail.id, 'welcome');
+                      if (url) alert('Welcome SMS sent with tracking link!');
+                    }}
+                    className="rounded bg-amber px-3 py-2 text-xs font-bold text-navy"
+                  >
+                    📱 Send SMS
+                  </button>
+                </div>
+              </section>
+            )}
 
             <section>
               <div className="mb-3 flex items-center justify-between">

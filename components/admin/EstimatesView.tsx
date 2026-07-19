@@ -210,21 +210,32 @@ export function EstimatesView() {
   }
 
   async function convertToProject(estimate: Estimate) {
-    if (!confirm(`Create a project from "${estimate.title}"?`)) return;
+    if (!confirm(`Create a project from "${estimate.title}"? Client will receive SMS with tracking link.`)) return;
     const supabase = createClient();
-    const { error } = await supabase.from('projects').insert([
-      {
-        client_id: estimate.client_id,
-        estimate_id: estimate.id,
-        title: estimate.title,
-        status: 'scheduled',
-        address: estimate.clients?.address ?? null,
-      },
-    ]);
+    const { data, error } = await supabase
+      .from('projects')
+      .insert([
+        {
+          client_id: estimate.client_id,
+          estimate_id: estimate.id,
+          title: estimate.title,
+          status: 'scheduled',
+          address: estimate.clients?.address ?? null,
+        },
+      ])
+      .select('id')
+      .single();
     if (error) alert(error.message);
     else {
       await supabase.from('estimates').update({ status: 'approved' }).eq('id', estimate.id);
-      alert('Project created! View it in Projects.');
+      if (data?.id) {
+        await fetch('/api/notify-project', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId: data.id, type: 'welcome' }),
+        });
+      }
+      alert('Project created! Client notified by SMS if configured.');
       load();
     }
   }

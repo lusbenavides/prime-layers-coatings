@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { sendLeadEmail } from '@/lib/mailer';
+import { buildNewLeadSms } from '@/lib/project-tracking';
+import { sendSmsSafe } from '@/lib/sms';
 
 async function upsertClient({ name, email, phone }: { name: string; email?: string; phone: string }) {
   const supabase = getSupabaseAdmin();
@@ -69,6 +71,11 @@ export async function POST(request: Request) {
       await sendLeadEmail({ source: 'form', name, email, phone, projectType, description });
     } catch (emailError) {
       console.error('Email notification failed:', emailError);
+    }
+
+    const companyPhone = process.env.COMPANY_PHONE;
+    if (companyPhone) {
+      await sendSmsSafe(companyPhone, buildNewLeadSms(name, phone, projectType));
     }
 
     return NextResponse.json({ success: true, message: 'Cotización registrada exitosamente.' });

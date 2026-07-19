@@ -1,7 +1,7 @@
 export type LeadStatus = 'new' | 'contacted' | 'quoted' | 'won' | 'lost';
 export type UserRole = 'admin' | 'employee';
 export type EstimateStatus = 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
-export type ProjectStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+export type ProjectStatus = 'scheduled' | 'in_progress' | 'finishing' | 'completed' | 'cancelled';
 export type PaymentStatus = 'pending' | 'partial' | 'paid' | 'refunded';
 
 export interface Lead {
@@ -71,6 +71,8 @@ export interface Project {
   start_date?: string | null;
   end_date?: string | null;
   notes?: string | null;
+  access_token?: string;
+  status_updated_at?: string | null;
   created_at: string;
   updated_at?: string;
   clients?: Pick<Client, 'full_name' | 'phone' | 'email'>;

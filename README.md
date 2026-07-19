@@ -60,9 +60,18 @@ GMAIL_APP_PASSWORD=
 COMPANY_EMAIL=
 ```
 
+### Twilio SMS (optional)
+
+```env
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=     # e.g. +17025551234
+COMPANY_PHONE=           # your cell for new-lead alerts
+```
+
 ### 2. Database migration
 
-Run `supabase/migrations/001_crm_schema.sql` and `002_storage.sql` in Supabase SQL Editor.
+Run `supabase/migrations/001_crm_schema.sql`, `002_storage.sql`, and `003_client_portal.sql` in Supabase SQL Editor.
 
 ### 3. Create admin user
 
@@ -89,3 +98,5 @@ npm run optimize-images      # JPEG → WebP
 - [x] Projects + calendar + payments + photo uploads
 - [x] Lead → Client conversion + create estimate from lead
 - [x] Dashboard quick links
+- [x] SMS notifications (Twilio) on leads + project status
+- [x] Client tracking portal `/track/[token]` with bilingual timeline
