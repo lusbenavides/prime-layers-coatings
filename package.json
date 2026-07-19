@@ -1,9 +1,31 @@
 {
-  "name": "prime-layer-coatings-backend",
-  "version": "1.0.0",
-  "type": "module",
+  "name": "prime-layer-coatings",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "optimize-images": "node scripts/optimize-images.mjs"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "nodemailer": "^9.0.3"
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.49.1",
+    "next": "^15.2.4",
+    "nodemailer": "^9.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/nodemailer": "^6.4.17",
+    "@types/react": "^19.0.11",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "sharp": "^0.34.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.2"
   }
 }

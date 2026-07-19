@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-let transporter;
+let transporter: nodemailer.Transporter | null = null;
 
 function getTransporter() {
   if (!transporter) {
@@ -8,24 +8,36 @@ function getTransporter() {
       service: 'gmail',
       auth: {
         user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-      }
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
     });
   }
   return transporter;
 }
 
-function escapeHtml(str) {
-  return String(str ?? '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
+function escapeHtml(str?: string) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
+  );
 }
 
-// Envía una notificación por correo cuando llega un lead nuevo,
-// ya sea desde el formulario de cotización o desde el chat de Ava.
-export async function sendLeadEmail({ source, name, email, phone, projectType, description }) {
+export async function sendLeadEmail({
+  source,
+  name,
+  email,
+  phone,
+  projectType,
+  description,
+}: {
+  source: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  projectType?: string;
+  description?: string;
+}) {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    console.error('Faltan GMAIL_USER o GMAIL_APP_PASSWORD en las variables de entorno.');
+    console.error('Missing GMAIL_USER or GMAIL_APP_PASSWORD');
     return;
   }
 
@@ -52,6 +64,6 @@ export async function sendLeadEmail({ source, name, email, phone, projectType, d
     to,
     replyTo: email || undefined,
     subject: `🎨 Nueva cotización — ${name || 'Cliente'} (${sourceLabel})`,
-    html
+    html,
   });
 }

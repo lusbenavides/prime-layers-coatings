@@ -17,3 +17,26 @@ window.addEventListener('scroll', () => {
     ? '0 4px 28px rgba(0,0,0,0.5)'
     : 'none';
 }, { passive: true });
+
+// Abrir chat Ava desde distintos puntos de la UI
+function openAvaChat() {
+  const toggle = document.getElementById('chat-toggle');
+  const win = document.getElementById('chat-window');
+  if (toggle && win && !win.classList.contains('active')) toggle.click();
+  document.getElementById('chat-hint')?.classList.remove('visible');
+  sessionStorage.setItem('chatHintSeen', '1');
+}
+
+document.getElementById('mobile-chat-open')?.addEventListener('click', openAvaChat);
+document.getElementById('open-ava-from-form')?.addEventListener('click', openAvaChat);
+
+const chatHint = document.getElementById('chat-hint');
+if (chatHint && !sessionStorage.getItem('chatHintSeen')) {
+  setTimeout(() => chatHint.classList.add('visible'), 2200);
+  chatHint.addEventListener('click', openAvaChat);
+}
+
+document.getElementById('chat-toggle')?.addEventListener('click', () => {
+  chatHint?.classList.remove('visible');
+  sessionStorage.setItem('chatHintSeen', '1');
+});
