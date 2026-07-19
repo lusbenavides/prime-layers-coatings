@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import type { Lead } from '@/types/database';
 import { formatDate, formatMoney } from '@/lib/format';
@@ -35,24 +36,33 @@ export function DashboardView() {
   if (loading) return <div className="text-gray-400">Loading dashboard…</div>;
 
   const cards = [
-    { label: 'Clients', value: stats.clients },
-    { label: 'New Leads', value: stats.newLeads },
-    { label: 'Pending Estimates', value: stats.estimates },
-    { label: 'Active Projects', value: stats.projects },
-    { label: 'Total Collected', value: formatMoney(stats.paid), money: true },
+    { label: 'Clients', value: stats.clients, href: '/admin/clients' },
+    { label: 'New Leads', value: stats.newLeads, href: '/admin/leads' },
+    { label: 'Pending Estimates', value: stats.estimates, href: '/admin/estimates' },
+    { label: 'Active Projects', value: stats.projects, href: '/admin/projects' },
+    { label: 'Total Collected', value: formatMoney(stats.paid), money: true, href: '/admin/projects' },
   ];
 
   return (
     <div>
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-lg border border-white/10 bg-navy-card p-5">
+          <Link
+            key={c.label}
+            href={c.href}
+            className="rounded-lg border border-white/10 bg-navy-card p-5 transition hover:border-amber/30 hover:bg-white/5"
+          >
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">{c.label}</div>
             <div className={`mt-2 font-bold text-amber ${c.money ? 'text-2xl' : 'text-3xl'}`}>{c.value}</div>
-          </div>
+          </Link>
         ))}
       </div>
-      <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-gray-400">Recent Leads</h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Recent Leads</h3>
+        <Link href="/admin/leads" className="text-xs text-amber hover:underline">
+          View all →
+        </Link>
+      </div>
       {recentLeads.length === 0 ? (
         <p className="text-gray-400">No leads yet — they appear here from your website form and Ava chat.</p>
       ) : (

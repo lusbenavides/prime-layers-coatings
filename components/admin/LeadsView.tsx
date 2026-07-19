@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { Lead, LeadStatus, Profile } from '@/types/database';
 import { formatDate } from '@/lib/format';
@@ -9,6 +10,7 @@ import { AdminShell } from '@/components/admin/AdminShell';
 const STATUSES: LeadStatus[] = ['new', 'contacted', 'quoted', 'won', 'lost'];
 
 export function LeadsView() {
+  const router = useRouter();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [search, setSearch] = useState('');
@@ -55,6 +57,86 @@ export function LeadsView() {
     else load();
   }
 
+  async function convertToClient(lead: Lead) {
+    const supabase = createClient();
+    if (lead.client_id) {
+      alert('Lead already linked to a client.');
+      return;
+    }
+    const { data: client, error } = await supabase
+      .from('clients')
+      .insert([{ full_name: lead.name, phone: lead.phone, email: lead.email || null }])
+      .select('id')
+      .single();
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await supabase
+      .from('leads')
+      .update({ client_id: client.id, status: 'contacted' })
+      .eq('id', lead.id);
+    alert('Client created and linked to lead.');
+    load();
+  }
+
+  async function createEstimate(lead: Lead) {
+    const supabase = createClient();
+    let clientId = lead.client_id;
+
+    if (!clientId) {
+      const { data: client, error } = await supabase
+        .from('clients')
+        .insert([{ full_name: lead.name, phone: lead.phone, email: lead.email || null }])
+        .select('id')
+        .single();
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      clientId = client.id;
+      await supabase.from('leads').update({ client_id: clientId }).eq('id', lead.id);
+    }
+
+    const title = lead.project_type
+      ? `${lead.project_type} — ${lead.name}`
+      : `Estimate for ${lead.name}`;
+
+    const { data: estimate, error: estError } = await supabase
+      .from('estimates')
+      .insert([
+        {
+          client_id: clientId,
+          lead_id: lead.id,
+          title,
+          status: 'draft',
+          notes: lead.description || null,
+        },
+      ])
+      .select('id')
+      .single();
+
+    if (estError || !estimate) {
+      alert(estError?.message ?? 'Failed to create estimate');
+      return;
+    }
+
+    if (lead.project_type || lead.description) {
+      await supabase.from('estimate_items').insert([
+        {
+          estimate_id: estimate.id,
+          description: lead.project_type || lead.description || 'Painting services',
+          quantity: 1,
+          unit_price: 0,
+          sort_order: 0,
+        },
+      ]);
+    }
+
+    await supabase.from('leads').update({ status: 'quoted' }).eq('id', lead.id);
+    router.push('/admin/estimates');
+  }
+
   return (
     <AdminShell>
       <div className="mb-4 flex flex-wrap gap-3">
@@ -94,8 +176,18 @@ export function LeadsView() {
                     </select>
                   </td>
                   <td className="p-3 text-gray-400">{formatDate(l.created_at)}</td>
-                  <td className="p-3">
-                    <button type="button" onClick={() => deleteLead(l.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+                  <td className="p-3 space-x-2 whitespace-nowrap">
+                    {!l.client_id && (
+                      <button type="button" onClick={() => convertToClient(l)} className="text-xs text-green-400">
+                        → Client
+                      </button>
+                    )}
+                    <button type="button" onClick={() => createEstimate(l)} className="text-xs text-amber">
+                      Estimate
+                    </button>
+                    <button type="button" onClick={() => deleteLead(l.id)} className="text-xs text-red-400 hover:text-red-300">
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}

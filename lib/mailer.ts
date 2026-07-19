@@ -67,3 +67,73 @@ export async function sendLeadEmail({
     html,
   });
 }
+
+export async function sendEstimateEmail({
+  clientName,
+  clientEmail,
+  title,
+  total,
+  validUntil,
+  items,
+  printUrl,
+}: {
+  clientName: string;
+  clientEmail: string;
+  title: string;
+  total: string;
+  validUntil?: string | null;
+  items: { description: string; quantity: number; unit_price: number }[];
+  printUrl: string;
+}) {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    throw new Error('Email not configured');
+  }
+
+  const rows = items
+    .map(
+      (i) =>
+        `<tr>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;">${escapeHtml(i.description)}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">${i.quantity}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">$${Number(i.unit_price).toFixed(2)}</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;">$${(i.quantity * i.unit_price).toFixed(2)}</td>
+        </tr>`
+    )
+    .join('');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1a2332;">
+      <h2 style="color:#0c1e32;">Your Estimate from Prime Layer Coatings</h2>
+      <p>Hi ${escapeHtml(clientName)},</p>
+      <p>Thank you for your interest! Here is your estimate for <strong>${escapeHtml(title)}</strong>.</p>
+      ${validUntil ? `<p style="color:#666;font-size:14px;">Valid until: ${escapeHtml(validUntil)}</p>` : ''}
+      <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
+        <thead>
+          <tr style="border-bottom:2px solid #0c1e32;color:#666;font-size:12px;text-transform:uppercase;">
+            <th style="padding:8px 0;text-align:left;">Description</th>
+            <th style="padding:8px 0;text-align:right;">Qty</th>
+            <th style="padding:8px 0;text-align:right;">Price</th>
+            <th style="padding:8px 0;text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="font-size:20px;font-weight:bold;color:#0c1e32;">Total: <span style="color:#c8922a;">${escapeHtml(total)}</span></p>
+      <p style="margin:24px 0;">
+        <a href="${printUrl}" style="background:#c8922a;color:#0c1e32;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;">
+          View Full Estimate
+        </a>
+      </p>
+      <p style="color:#666;font-size:14px;">Questions? Call us at 725-318-1411 or reply to this email.</p>
+      <p style="color:#999;font-size:11px;margin-top:24px;">Prime Layer Coatings LLC · Licensed & Insured · Las Vegas, NV</p>
+    </div>
+  `;
+
+  await getTransporter().sendMail({
+    from: `"Prime Layer Coatings" <${process.env.GMAIL_USER}>`,
+    to: clientEmail,
+    replyTo: process.env.COMPANY_EMAIL || process.env.GMAIL_USER,
+    subject: `Your Painting Estimate — ${title}`,
+    html,
+  });
+}

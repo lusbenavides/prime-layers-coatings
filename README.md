@@ -62,7 +62,7 @@ COMPANY_EMAIL=
 
 ### 2. Database migration
 
-Run `supabase/migrations/001_crm_schema.sql` in Supabase SQL Editor.
+Run `supabase/migrations/001_crm_schema.sql` and `002_storage.sql` in Supabase SQL Editor.
 
 ### 3. Create admin user
 
@@ -85,5 +85,7 @@ npm run optimize-images      # JPEG → WebP
 - [x] Dashboard with stats
 - [x] Leads CRUD (search, filter, status)
 - [x] Clients CRUD
-- [ ] Estimates + PDF (Phase 2)
-- [ ] Projects + calendar (Phase 2)
+- [x] Estimates + line items + PDF print + email to client
+- [x] Projects + calendar + payments + photo uploads
+- [x] Lead → Client conversion + create estimate from lead
+- [x] Dashboard quick links
