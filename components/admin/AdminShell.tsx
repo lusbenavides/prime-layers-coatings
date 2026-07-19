@@ -42,12 +42,35 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-navy text-white">
-      <aside className="hidden w-60 flex-col border-r border-white/10 bg-[#040b14] md:flex">
+      <aside className="flex w-full flex-col border-b border-white/10 bg-[#040b14] md:hidden">
+        <div className="flex items-center justify-between border-b border-white/10 p-4">
+          <h1 className="font-bebas text-lg tracking-widest">
+            PRIME LAYER <span className="text-amber">CRM</span>
+          </h1>
+        </div>
+        <div className="flex gap-1 overflow-x-auto p-2">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium ${
+                isActive(item.href, item.exact) ? 'bg-amber/15 text-amber' : 'text-gray-300'
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </aside>
+
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-white/10 bg-[#040b14] md:flex">
         <div className="border-b border-white/10 p-5">
-          <h1 className="font-bebas text-lg tracking-widest">PRIME LAYER <span className="text-amber">CRM</span></h1>
+          <h1 className="font-bebas text-lg tracking-widest">
+            PRIME LAYER <span className="text-amber">CRM</span>
+          </h1>
           <p className="text-xs uppercase tracking-wider text-gray-400">Business Manager</p>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
+        <div className="flex-1 space-y-1 p-3">
           {NAV.map((item) => (
             <Link
               key={item.href}
@@ -61,7 +84,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               {item.label}
             </Link>
           ))}
-        </nav>
+        </div>
         <div className="border-t border-white/10 p-4">
           <div className="mb-3 flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber text-sm font-bold text-navy">
@@ -78,12 +101,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-white/10 bg-navy/95 px-6 py-4 backdrop-blur">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center justify-between border-b border-white/10 bg-navy/95 px-6 py-4 backdrop-blur">
           <h2 className="text-lg font-bold capitalize">{pathname.split('/').pop() || 'dashboard'}</h2>
-          <Link href="/" className="text-sm text-gray-400 hover:text-amber">← Website</Link>
-        </header>
-        <main className="flex-1 p-6">{children}</main>
+          <Link href="/" className="text-sm text-gray-400 hover:text-amber">
+            ← Website
+          </Link>
+        </div>
+        <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>
     </div>
   );
